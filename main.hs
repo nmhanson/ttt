@@ -3,8 +3,26 @@ import Text.Read
 
 data Move n = Invalid | Valid n deriving Show
 data Cell n = X | O | Empty n deriving Show
+data State w = Winner w | Cats | Ongoing
+
 type Piece = Cell Int
 type Board = [Piece]
+type GameState = State Piece
+type Vector = (Int, Int, Int)
+
+-- List of winning triples on the board
+winVecs :: [Vector]
+winVecs = [ (0, 1, 2) -- Rows
+          , (3, 4, 5)
+          , (6, 7, 8)
+----------------------------------
+          , (0, 3, 6) -- Columns
+          , (1, 4, 7)
+          , (2, 5, 8)
+----------------------------------
+          , (0, 4, 8) -- Diagonals
+          , (6, 4, 2)
+          ]
 
 -- Horizontal separator for readability
 hSep :: String
@@ -19,10 +37,28 @@ play :: Board -> Piece -> IO ()
 play b p = do
     putStrLn $ boardStr b
     input <- getLine
-    let m = parseMove input
-    play (applyMv b m p) (np m)
-    where np Invalid   = p
-          np (Valid _) = nextPiece p
+    let m  = parseMove input
+        nb = (applyMv b m p)
+    case getState nb of (Winner player) -> printWinner player
+                        Ongoing         -> play nb (np m) 
+    where np Invalid     = p
+          np (Valid _)   = nextPiece p
+          printWinner pl = putStrLn $ show pl ++ " wins!"
+
+-- Scan the board for winning triples
+getState :: Board -> GameState
+getState bd = newState $ find winner (map (checkVec bd) winVecs)
+              where winner (Winner _) = True
+                    winner _          = False
+                    newState (Just w) = w
+                    newState Nothing  = Ongoing
+
+-- Check a triplet on the board to determine whether a player has won
+checkVec :: Board -> Vector -> GameState
+checkVec bd (a, b, c) = newState (bd !! a, bd !! b, bd !! c)
+                        where newState (X, X, X) = Winner X
+                              newState (O, O, O) = Winner O
+                              newState _         = Ongoing
 
 -- Creates a board from the previous board with the move applied
 applyMv :: Board -> Move Int -> Piece -> Board
