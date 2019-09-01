@@ -3,6 +3,9 @@ I wanted to learn Haskell, so I implemented a stupid Tic-Tac-Toe in it.
 It is two player only, and X goes first. As fun as it was to write, I'll
 probably never add AI for a single player mode. :(
 
+Also, as I am learning Haskell, it is likely not very idiomatic. Or clean.
+Or even formatted correctly. But it's mine and it's beautiful to me.
+
 
 # Requirements
 Make & GHC
@@ -24,6 +27,6 @@ winner by the time the board is completely full of pieces, the game is declared
 a "Cat's game" and it is a draw.
 
 
-It's tic-tac-toe; if you are a human who somehow knows how to compile and run
+It's Tic-Tac-Toe; if you are a human who somehow knows how to compile and run
 this program, yet did not know how to play Tic-Tac-Toe, please contact me - I
 would like to learn more about you, you strange person.
