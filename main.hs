@@ -1,7 +1,6 @@
 import Data.List
 import Text.Read
 
-data Move n = Invalid | Valid n deriving Show
 data Cell n = X | O | Empty n deriving Show
 data State w = Winner w | Cats | Ongoing
 
@@ -9,6 +8,7 @@ type Piece = Cell Int
 type Board = [Piece]
 type GameState = State Piece
 type Vector = (Int, Int, Int)
+type Move = Maybe Int
 
 -- List of winning triples on the board
 winVecs :: [Vector]
@@ -35,23 +35,33 @@ main = play initBd X
 -- Game loop
 play :: Board -> Piece -> IO ()
 play b p = do
+    putStrLn $ "It is your turn, " ++ show p ++ "!"
     putStrLn $ boardStr b
     input <- getLine
-    let m  = parseMove input
+    let m  = parseMove input b
         nb = (applyMv b m p)
     case getState nb of (Winner player) -> printWinner player
+                        Cats            -> declareCats
                         Ongoing         -> play nb (np m) 
-    where np Invalid     = p
-          np (Valid _)   = nextPiece p
+    where np Nothing     = p
+          np (Just _)    = nextPiece p
           printWinner pl = putStrLn $ show pl ++ " wins!"
+          declareCats    = putStrLn "It's a tie!"
 
 -- Scan the board for winning triples
 getState :: Board -> GameState
-getState bd = newState $ find winner (map (checkVec bd) winVecs)
+getState bd = checkCats bd $ find winner (map (checkVec bd) winVecs)
               where winner (Winner _) = True
                     winner _          = False
                     newState (Just w) = w
                     newState Nothing  = Ongoing
+
+-- If there isn't a winner yet, check to see if board has been filled
+checkCats :: Board -> Maybe GameState -> GameState
+checkCats _ (Just w) = w
+checkCats bd Nothing = if all filled bd then Cats else Ongoing
+                       where filled (Empty _) = False
+                             filled _         = True
 
 -- Check a triplet on the board to determine whether a player has won
 checkVec :: Board -> Vector -> GameState
@@ -61,9 +71,9 @@ checkVec bd (a, b, c) = newState (bd !! a, bd !! b, bd !! c)
                               newState _         = Ongoing
 
 -- Creates a board from the previous board with the move applied
-applyMv :: Board -> Move Int -> Piece -> Board
-applyMv b (Valid n) p = (take (n - 1) b) ++ p : (drop n b)
-applyMv b Invalid p = b
+applyMv :: Board -> Move -> Piece -> Board
+applyMv b (Just n) p = (take (n - 1) b) ++ p : (drop n b)
+applyMv b Nothing p = b
 
 -- Create board of empty cells
 initBd :: Board
@@ -86,15 +96,25 @@ cellStr :: Piece -> String
 cellStr (Empty n) = show n
 cellStr c = show c
 
--- Validate whether a move is valid and parse it to an Int
-parseMove :: String -> Move Int
-parseMove s
-    | moveNum input > 9 = Invalid
-    | moveNum input < 1 = Invalid
-    | otherwise   = Valid $ moveNum input
-    where moveNum (Just n) = n
-          moveNum Nothing = (-1) -- malformed input
-          input = readMaybe s :: Maybe Int
+-- Validate a move
+parseMove :: String -> Board -> Move
+parseMove s b = readMaybe s >>= verifyMvValid >>= verifyMvNoCollision b
+
+-- Verify a move falls within the boundries of the board
+verifyMvValid :: Int -> Move
+verifyMvValid mvNum
+    | mvNum > 9 = Nothing
+    | mvNum < 1 = Nothing
+    | otherwise = Just $ mvNum
+
+-- Verify a move doesn't collide with a piece that has already been placed
+verifyMvNoCollision :: Board -> Int -> Move
+verifyMvNoCollision bd cellNum 
+    | collides (bd !! (cellNum - 1)) = Nothing
+    | otherwise = Just cellNum
+    where collides (Empty _) = False
+          collides _         = True
+
 
 -- Toggle which piece is about to be played
 nextPiece :: Piece -> Piece
