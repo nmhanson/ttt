@@ -42,7 +42,7 @@ play b p = do
         nb = (applyMv b m p)
     case getState nb of (Winner player) -> printWinner player
                         Cats            -> declareCats
-                        Ongoing         -> play nb (np m) 
+                        Ongoing         -> play nb (np m)
     where np Nothing     = p
           np (Just _)    = nextPiece p
           printWinner pl = putStrLn $ show pl ++ " wins!"
@@ -53,8 +53,6 @@ getState :: Board -> GameState
 getState bd = checkCats bd $ find winner (map (checkVec bd) winVecs)
               where winner (Winner _) = True
                     winner _          = False
-                    newState (Just w) = w
-                    newState Nothing  = Ongoing
 
 -- If there isn't a winner yet, check to see if board has been filled
 checkCats :: Board -> Maybe GameState -> GameState
@@ -73,7 +71,7 @@ checkVec bd (a, b, c) = newState (bd !! a, bd !! b, bd !! c)
 -- Creates a board from the previous board with the move applied
 applyMv :: Board -> Move -> Piece -> Board
 applyMv b (Just n) p = (take (n - 1) b) ++ p : (drop n b)
-applyMv b Nothing p = b
+applyMv b Nothing _ = b
 
 -- Create board of empty cells
 initBd :: Board
@@ -109,7 +107,7 @@ verifyMvValid mvNum
 
 -- Verify a move doesn't collide with a piece that has already been placed
 verifyMvNoCollision :: Board -> Int -> Move
-verifyMvNoCollision bd cellNum 
+verifyMvNoCollision bd cellNum
     | collides (bd !! (cellNum - 1)) = Nothing
     | otherwise = Just cellNum
     where collides (Empty _) = False
@@ -119,4 +117,5 @@ verifyMvNoCollision bd cellNum
 -- Toggle which piece is about to be played
 nextPiece :: Piece -> Piece
 nextPiece X = O
-nextPiece O = X
+nextPiece _ = X
+
