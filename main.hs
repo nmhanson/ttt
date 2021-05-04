@@ -40,7 +40,7 @@ play b p = do
     input <- getLine
     let m  = parseMove input b
         nb = (applyMv b m p)
-    case getState nb of (Winner player) -> printWinner player
+    case getState nb of (Winner player) -> (putStrLn $ boardStr nb) >> printWinner player
                         Cats            -> declareCats
                         Ongoing         -> play nb (np m)
     where np Nothing     = p
@@ -103,7 +103,7 @@ verifyMvValid :: Int -> Move
 verifyMvValid mvNum
     | mvNum > 9 = Nothing
     | mvNum < 1 = Nothing
-    | otherwise = Just $ mvNum
+    | otherwise = Just mvNum
 
 -- Verify a move doesn't collide with a piece that has already been placed
 verifyMvNoCollision :: Board -> Int -> Move
